@@ -1,35 +1,28 @@
-# Logs
-logs
-*.log
+# Node modules
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Build outputs
+dist/
+build/
+.vite/
 *.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Environment variables
+.env
+.env.local
+.env.*.local
 
-# Data directories (uploaded and processed files)
-/data/uploads/*
-/data/outputs/*
-/data/sample-data/*
-!data/uploads/.gitkeep
-!data/outputs/.gitkeep
-!data/sample-data/.gitkeep
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
 
 # Python
 __pycache__/
@@ -40,5 +33,33 @@ __pycache__/
 env/
 venv/
 ENV/
-env.bak/
-venv.bak/
+*.egg-info/
+.pytest_cache/
+
+# Data files (keep structure, ignore content)
+data/uploads/*
+!data/uploads/.gitkeep
+data/outputs/*
+!data/outputs/.gitkeep
+data/sample-data/*
+!data/sample-data/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Artifacts (your personal brain storage)
+.gemini/
