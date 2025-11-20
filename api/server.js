@@ -30,7 +30,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   fileFilter: function (req, file, cb) {
     // Only allow GeoTIFF files
@@ -41,8 +41,46 @@ const upload = multer({
   }
 });
 
-// In-memory job store (would use a database in production)
+// Job persistence file
+const JOBS_FILE = path.join(__dirname, '../data/jobs.json');
+
+// Initialize jobs from persistent storage or empty object
 let jobs = {};
+
+// Load jobs from file on startup
+function loadJobs() {
+  try {
+    if (fs.existsSync(JOBS_FILE)) {
+      const data = fs.readFileSync(JOBS_FILE, 'utf8');
+      jobs = JSON.parse(data);
+      console.log(`Loaded ${Object.keys(jobs).length} jobs from persistent storage`);
+    } else {
+      console.log('No existing jobs file found, starting fresh');
+    }
+  } catch (error) {
+    console.error('Error loading jobs:', error);
+    jobs = {};
+  }
+}
+
+// Save jobs to file
+function saveJobs() {
+  try {
+    // Ensure data directory exists
+    const dataDir = path.dirname(JOBS_FILE);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+
+    fs.writeFileSync(JOBS_FILE, JSON.stringify(jobs, null, 2), 'utf8');
+    console.log('Jobs saved to persistent storage');
+  } catch (error) {
+    console.error('Error saving jobs:', error);
+  }
+}
+
+// Load jobs on startup
+loadJobs();
 
 // POST /api/upload - Upload a GeoTIFF file
 app.post('/api/upload', upload.single('file'), (req, res) => {
@@ -52,14 +90,14 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 
   // Generate a unique image ID based on the file
   const imageId = req.file.filename;
-  
-  res.json({ 
-    message: 'Upload successful', 
-    imageId: imageId 
+
+  res.json({
+    message: 'Upload successful',
+    imageId: imageId
   });
 });
 
-// POST /api/jobs - Create a new alignment job
+// POST/api/jobs - Create a new alignment job
 app.post('/api/jobs', (req, res) => {
   const { imageAId, imageBId, aoi } = req.body;
 
@@ -70,7 +108,7 @@ app.post('/api/jobs', (req, res) => {
 
   // Generate a unique job ID
   const jobId = `job-${Date.now()}-${Math.round(Math.random() * 1E6)}`;
-  
+
   // Initialize job in our store
   jobs[jobId] = {
     id: jobId,
@@ -83,23 +121,27 @@ app.post('/api/jobs', (req, res) => {
     updatedAt: new Date().toISOString()
   };
 
+  // Save to persistent storage
+  saveJobs();
+
   try {
     // Define paths for the Python worker
     const pythonExecutable = process.env.PYTHON_PATH || 'python';
     const workerScript = path.resolve(__dirname, '../worker/worker.py');
     const outputDir = path.resolve(__dirname, `../data/outputs/${jobId}`);
-    
+
     // Create output directory if it doesn't exist
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
-    
+
     // Prepare the AOI as a string in the expected format
     const aoiString = `north=${aoi.north};south=${aoi.south};east=${aoi.east};west=${aoi.west}`;
-    
+
     // Update job status to 'running'
     jobs[jobId].status = 'running';
     jobs[jobId].updatedAt = new Date().toISOString();
+    saveJobs();
 
     // Spawn the Python worker process
     const workerProcess = spawn(pythonExecutable, [
@@ -120,11 +162,12 @@ app.post('/api/jobs', (req, res) => {
       jobs[jobId].status = 'error';
       jobs[jobId].error = data.toString();
       jobs[jobId].updatedAt = new Date().toISOString();
+      saveJobs();
     });
 
     workerProcess.on('close', (code) => {
       console.log(`Python worker process exited with code ${code}`);
-      
+
       if (code === 0) {
         // Process completed successfully
         jobs[jobId].status = 'done';
@@ -137,8 +180,9 @@ app.post('/api/jobs', (req, res) => {
         jobs[jobId].status = 'error';
         jobs[jobId].error = `Process failed with exit code ${code}`;
       }
-      
+
       jobs[jobId].updatedAt = new Date().toISOString();
+      saveJobs();
     });
 
     // Return immediately with the job ID
@@ -148,12 +192,22 @@ app.post('/api/jobs', (req, res) => {
     jobs[jobId].status = 'error';
     jobs[jobId].error = error.message;
     jobs[jobId].updatedAt = new Date().toISOString();
-    
-    res.status(500).json({ 
+    saveJobs();
+
+    res.status(500).json({
       error: 'Failed to start processing job',
-      jobId 
+      jobId
     });
   }
+});
+
+// GET /api/jobs - Get all jobs (for debugging and UI recovery)
+app.get('/api/jobs', (req, res) => {
+  // Return list of all jobs sorted by creation date
+  const jobList = Object.values(jobs).sort((a, b) =>
+    new Date(b.createdAt) - new Date(a.createdAt)
+  );
+  res.json(jobList);
 });
 
 // GET /api/jobs/:jobId - Get job status
@@ -197,12 +251,27 @@ app.use((error, req, res, next) => {
   res.status(500).json({ error: error.message });
 });
 
+// Graceful shutdown - save jobs before exit
+process.on('SIGINT', () => {
+  console.log('\nGracefully shutting down...');
+  saveJobs();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('\nGracefully shutting down...');
+  saveJobs();
+  process.exit(0);
+});
+
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`✅ Server is running on port ${PORT}`);
+  console.log(`📊 Loaded ${Object.keys(jobs).length} existing jobs`);
   console.log(`API endpoints available:`);
   console.log(`  POST /api/upload - Upload GeoTIFF files`);
   console.log(`  POST /api/jobs   - Create alignment job`);
+  console.log(`  GET  /api/jobs   - List all jobs`);
   console.log(`  GET  /api/jobs/:jobId - Get job status`);
   console.log(`  GET  /api/rasters/:jobId/:filename - Serve processed rasters`);
 });

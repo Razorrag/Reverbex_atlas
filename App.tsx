@@ -21,6 +21,23 @@ const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Recover job on page load if exists
+  useEffect(() => {
+    const savedJobId = localStorage.getItem('currentJobId');
+    if (savedJobId && !job) {
+      // Try to recover the job from backend
+      api.getJobStatus(savedJobId)
+        .then(recoveredJob => {
+          setJob(recoveredJob);
+          console.log('Recovered job from backend:', recoveredJob);
+        })
+        .catch(err => {
+          console.log('Could not recover job:', err);
+          localStorage.removeItem('currentJobId');
+        });
+    }
+  }, []);
+
   const clearPolling = () => {
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
@@ -77,6 +94,8 @@ const App: React.FC = () => {
         aoi,
       });
       setJob(newJob);
+      // Save job ID for recovery on page refresh
+      localStorage.setItem('currentJobId', newJob.id);
       handleJobStatusCheck(newJob.id);
     } catch (error) {
       console.error('Failed to create job:', error);
@@ -91,6 +110,8 @@ const App: React.FC = () => {
     setJob(null);
     setProcessedImageUrls(null);
     clearPolling();
+    // Clear saved job ID
+    localStorage.removeItem('currentJobId');
   };
 
   return (
