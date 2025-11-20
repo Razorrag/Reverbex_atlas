@@ -8,8 +8,28 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Enable CORS for all routes
-app.use(cors());
+// Configure allowed origins for CORS
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://reverbex-atlas.onrender.com',
+  'https://reverbex-atlas-api.onrender.com'
+];
+
+// Enable CORS for allowed origins
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 
 // Middleware to parse JSON
 app.use(express.json());
