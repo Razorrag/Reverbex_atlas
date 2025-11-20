@@ -1,0 +1,5 @@
+{
+  "name": "Geo-Image Aligner",
+  "description": "An interactive web application to upload, select an area of interest (AOI), and process two GeoTIFF images for alignment. Visualize the results on a split-screen map.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,141 @@
+/* Additional fixes for UI glitches */
+
+/* Ensure proper z-index layering */
+.leaflet-pane {
+    z-index: 400;
+}
+
+.leaflet-tile-pane {
+    z-index: 200;
+}
+
+.leaflet-overlay-pane {
+    z-index: 400;
+}
+
+.leaflet-shadow-pane {
+    z-index: 500;
+}
+
+.leaflet-marker-pane {
+    z-index: 600;
+}
+
+.leaflet-tooltip-pane {
+    z-index: 650;
+}
+
+.leaflet-popup-pane {
+    z-index: 700;
+}
+
+.leaflet-map-pane canvas {
+    z-index: 100;
+}
+
+.leaflet-draw-tooltip {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid rgba(6, 182, 212, 0.5) !important;
+    color: #e2e8f0 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+    font-size: 13px !important;
+}
+
+/* Fix draw controls styling */
+.leaflet-draw-actions {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid rgba(6, 182, 212, 0.3) !important;
+    border-radius: 8px !important;
+    padding: 8px !important;
+}
+
+.leaflet-draw-actions a {
+    background: rgba(6, 182, 212, 0.1) !important;
+    color: #06b6d4 !important;
+    border: 1px solid rgba(6, 182, 212, 0.3) !important;
+    border-radius: 6px !important;
+    padding: 6px 12px !important;
+    margin: 0 4px !important;
+    transition: all 0.2s ease !important;
+}
+
+.leaflet-draw-actions a:hover {
+    background: rgba(6, 182, 212, 0.2) !important;
+    border-color: rgba(6, 182, 212, 0.5) !important;
+}
+
+/* Fix attribution styling */
+.leaflet-control-attribution {
+    background: rgba(15, 23, 42, 0.8) !important;
+    color: #94a3b8 !important;
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(100, 116, 139, 0.2) !important;
+}
+
+.leaflet-control-attribution a {
+    color: #06b6d4 !important;
+}
+
+/* Fix draw toolbar button styling */
+.leaflet-draw-draw-rectangle {
+    background-image: none !important;
+    background-color: rgba(6, 182, 212, 0.1) !important;
+    border: 2px solid rgba(6, 182, 212, 0.4) !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+.leaflet-draw-draw-rectangle:hover {
+    background-color: rgba(6, 182, 212, 0.2) !important;
+    border-color: rgba(6, 182, 212, 0.6) !important;
+}
+
+/* Smooth map transition */
+.leaflet-container {
+    transition: opacity 0.3s ease;
+}
+
+.leaflet-container.leaflet-touch-drag {
+    cursor: grabbing !important;
+}
+
+/* Fix map loading flicker */
+.leaflet-tile {
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+/* Prevent map resize glitches */
+.leaflet-container .leaflet-control-container {
+    position: absolute;
+}
+
+/* Fix control positioning to avoid overlap */
+.leaflet-top.leaflet-left {
+    top: 10px;
+    left: 10px;
+}
+
+.leaflet-top.leaflet-right {
+    top: 10px;
+    right: 10px;
+}
+
+.leaflet-bottom.leaflet-left {
+    bottom: 10px;
+    left: 10px;
+}
+
+.leaflet-bottom.leaflet-right {
+    bottom: 10px;
+    right: 10px;
+}
